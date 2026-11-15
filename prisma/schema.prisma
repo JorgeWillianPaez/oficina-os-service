@@ -1,0 +1,128 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String @id @db.Uuid
+  email        String @unique
+  passwordHash String @map("password_hash")
+  role         String
+
+  @@map("users")
+}
+
+model Customer {
+  id        String         @id @db.Uuid
+  name      String
+  document  String         @unique @db.VarChar(14)
+  email     String
+  phone     String?
+  active    Boolean        @default(true)
+  createdAt DateTime       @default(now()) @map("created_at")
+  vehicles  Vehicle[]
+  orders    ServiceOrder[]
+
+  @@map("customers")
+}
+
+model Vehicle {
+  id         String         @id @db.Uuid
+  customerId String         @map("customer_id") @db.Uuid
+  plate      String         @unique @db.VarChar(7)
+  brand      String
+  model      String
+  year       Int
+  customer   Customer       @relation(fields: [customerId], references: [id])
+  orders     ServiceOrder[]
+
+  @@index([customerId])
+  @@map("vehicles")
+}
+
+model CatalogService {
+  id               String  @id @db.Uuid
+  name             String
+  description      String?
+  price            Decimal @db.Decimal(10, 2)
+  estimatedMinutes Int     @map("estimated_minutes")
+  active           Boolean @default(true)
+
+  @@map("catalog_services")
+}
+
+model Part {
+  id            String  @id @db.Uuid
+  name          String
+  sku           String  @unique
+  price         Decimal @db.Decimal(10, 2)
+  stockQuantity Int     @map("stock_quantity")
+  active        Boolean @default(true)
+
+  @@map("parts")
+}
+
+model ServiceOrder {
+  id                 String                      @id @db.Uuid
+  customerId         String                      @map("customer_id") @db.Uuid
+  vehicleId          String                      @map("vehicle_id") @db.Uuid
+  status             String
+  totalAmount        Decimal                     @map("total_amount") @db.Decimal(12, 2)
+  paymentUrl         String?                     @map("payment_url")
+  cancellationReason String?                     @map("cancellation_reason")
+  createdAt          DateTime                    @map("created_at")
+  startedAt          DateTime?                   @map("started_at")
+  finishedAt         DateTime?                   @map("finished_at")
+  deliveredAt        DateTime?                   @map("delivered_at")
+  customer           Customer                    @relation(fields: [customerId], references: [id])
+  vehicle            Vehicle                     @relation(fields: [vehicleId], references: [id])
+  items              ServiceOrderItem[]
+  history            ServiceOrderStatusHistory[]
+  saga               ServiceOrderSaga?
+
+  @@index([status, createdAt])
+  @@index([customerId])
+  @@index([vehicleId])
+  @@map("service_orders")
+}
+
+model ServiceOrderItem {
+  id          String       @id @db.Uuid
+  orderId     String       @map("order_id") @db.Uuid
+  type        String
+  referenceId String       @map("reference_id") @db.Uuid
+  name        String
+  unitPrice   Decimal      @map("unit_price") @db.Decimal(10, 2)
+  quantity    Int
+  order       ServiceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("service_order_items")
+}
+
+model ServiceOrderStatusHistory {
+  id        String       @id @db.Uuid
+  orderId   String       @map("order_id") @db.Uuid
+  status    String
+  changedAt DateTime     @map("changed_at")
+  order     ServiceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, changedAt])
+  @@map("service_order_status_history")
+}
+
+model ServiceOrderSaga {
+  orderId   String       @id @map("order_id") @db.Uuid
+  step      String
+  status    String
+  log       Json
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  order     ServiceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("service_order_sagas")
+}

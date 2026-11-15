@@ -1,0 +1,54 @@
+services:
+  os-service:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://oficina:oficina@os-db:5432/os_service
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      JWT_SECRET: local-development-secret
+      ADMIN_EMAIL: admin@oficina.com
+      ADMIN_PASSWORD: admin123
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+    depends_on:
+      os-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  os-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: oficina
+      POSTGRES_PASSWORD: oficina
+      POSTGRES_DB: os_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - os-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oficina -d os_service"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"
+
+volumes:
+  os-db-data:
