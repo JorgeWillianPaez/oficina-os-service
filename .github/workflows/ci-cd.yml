@@ -47,7 +47,7 @@ jobs:
     env:
       ENVIRONMENT: ${{ github.ref_name == 'main' && 'prod' || 'hml' }}
       NAMESPACE: ${{ github.ref_name == 'main' && 'oficina-prod' || 'oficina-hml' }}
-      INGRESS_PREFIX: ${{ github.ref_name == 'main' && '' || '/hml' }}
+      INGRESS_PREFIX: ${{ github.ref_name != 'main' && '/hml' || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
