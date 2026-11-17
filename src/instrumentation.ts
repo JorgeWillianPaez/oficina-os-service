@@ -5,5 +5,6 @@ if (process.env.NEW_RELIC_LICENSE_KEY) {
   process.env.NEW_RELIC_DISTRIBUTED_TRACING_ENABLED ??= 'true';
   process.env.NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED ??= 'true';
   process.env.NEW_RELIC_NO_CONFIG_FILE ??= 'true';
+  process.env.NEW_RELIC_LOG ??= 'stdout';
   require('newrelic');
 }
