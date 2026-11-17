@@ -16,6 +16,8 @@ spec:
       maxSurge: 1
   template:
     metadata:
+      annotations:
+        checksum/config: "${CONFIG_CHECKSUM}"
       labels:
         app: oficina-os-service
     spec:

@@ -77,6 +77,7 @@ jobs:
         run: |
           aws eks update-kubeconfig --name "$EKS_CLUSTER" --region "$AWS_REGION"
           kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          export CONFIG_CHECKSUM=$(cat k8s/configmap.yaml k8s/secret.yaml | envsubst | sha256sum | cut -c1-16)
           for manifest in k8s/*.yaml; do
             envsubst < "$manifest" | kubectl apply -n "$NAMESPACE" -f -
           done
